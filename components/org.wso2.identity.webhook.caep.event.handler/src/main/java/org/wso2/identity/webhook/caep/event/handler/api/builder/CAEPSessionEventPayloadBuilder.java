@@ -81,6 +81,9 @@ public class CAEPSessionEventPayloadBuilder implements SessionEventPayloadBuilde
                     initiatingEntity = "policy";
                     break;
             }
+            // TODO: Add specific cases (and tailored reason text) for other flows that can trigger session
+            // revocation - e.g. CREDENTIAL_REVOKE, CREDENTIAL_RESET, TOKEN_REVOKE, CONSENT_REVOKE - beyond
+            // the generic fallback below.
             // TODO: Define Flows and change names accordingly
             switch (flow.getName()) {
                 case LOGOUT:
@@ -102,6 +105,12 @@ public class CAEPSessionEventPayloadBuilder implements SessionEventPayloadBuilde
                     reasonUser.put("en", "User Account was Locked");
                     initiatingEntity = "policy";
                     break;
+                case PROFILE_UPDATE:
+                    // Account lock/disable flows are commonly preceded by a PROFILE_UPDATE flow in practice.
+                    reasonAdmin.put("en", "User Profile Locked or Disabled");
+                    reasonUser.put("en", "User Profile Locked or Disabled");
+                    initiatingEntity = "policy";
+                    break;
                 case SESSION_REVOKE:
                     if (flow.getInitiatingPersona() == Flow.InitiatingPersona.ADMIN) {
                         reasonAdmin.put("en", "Session Revoked by Admin");
@@ -109,8 +118,25 @@ public class CAEPSessionEventPayloadBuilder implements SessionEventPayloadBuilde
                     } else if (flow.getInitiatingPersona() == Flow.InitiatingPersona.USER) {
                         reasonAdmin.put("en", "Session Revoked by User");
                         reasonUser.put("en", "Session Revoked by User");
+                    } else {
+                        reasonAdmin.put("en", "Session Revoked");
+                        reasonUser.put("en", "Session Revoked");
                     }
+                    break;
+                default:
+                    // Fallback so reason_admin/reason_user are never empty - the CAEP Interoperability
+                    // Profile requires reason_admin to be populated with a non-empty object whenever
+                    // session-revoked is emitted.
+                    reasonAdmin.put("en", "Session revoked due to " + flow.getName());
+                    reasonUser.put("en", "Session revoked");
+                    break;
             }
+        } else {
+            // No Flow context available (e.g. a background/system-triggered termination with no
+            // attached flow). initiating_entity is genuinely unknown here and stays absent (it's
+            // optional per spec); reason_admin/reason_user still need the same non-empty fallback.
+            reasonAdmin.put("en", "Session revoked");
+            reasonUser.put("en", "Session revoked");
         }
 
         return new CAEPSessionRevokedEventPayload.Builder()

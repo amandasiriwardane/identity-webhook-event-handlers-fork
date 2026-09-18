@@ -19,6 +19,7 @@
 package org.wso2.identity.webhook.caep.event.handler.internal.util;
 
 import org.wso2.carbon.identity.event.IdentityEventConstants;
+import org.wso2.identity.webhook.caep.event.handler.internal.constants.CAEPConstants;
 import org.wso2.identity.webhook.common.event.handler.api.constants.Constants;
 import org.wso2.identity.webhook.common.event.handler.api.model.EventMetadata;
 
@@ -38,15 +39,20 @@ public class CAEPPayloadUtils {
         String channel = null;
         if (Objects.requireNonNull(eventName).equals(
                 IdentityEventConstants.Event.SESSION_TERMINATE_V2)) {
-            channel = Constants.Channel.SESSION_CHANNEL;
-            event = Constants.Event.SESSION_REVOKED_EVENT;
+            channel = CAEPConstants.Channel.SESSION_CHANNEL;
+            event = CAEPConstants.Event.SESSION_REVOKED_EVENT;
         } else if (IdentityEventConstants.Event.SESSION_CREATE.equals(eventName)) {
-            channel = Constants.Channel.SESSION_CHANNEL;
-            event = Constants.Event.SESSION_CREATED_EVENT;
+            channel = CAEPConstants.Channel.SESSION_CHANNEL;
+            event = CAEPConstants.Event.SESSION_CREATED_EVENT;
         } else if (IdentityEventConstants.Event.SESSION_EXTEND.equals(eventName) ||
                 IdentityEventConstants.Event.SESSION_UPDATE.equals(eventName)) {
-            channel = Constants.Channel.SESSION_CHANNEL;
-            event = Constants.Event.SESSION_PRESENTED_EVENT;
+            channel = CAEPConstants.Channel.SESSION_CHANNEL;
+            event = CAEPConstants.Event.SESSION_PRESENTED_EVENT;
+        } else if (IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD.equals(eventName) ||
+                IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_SCIM.equals(eventName) ||
+                IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ME_API.equals(eventName)) {
+            channel = CAEPConstants.Channel.CREDENTIAL_CHANGE_CHANNEL;
+            event = CAEPConstants.Event.CREDENTIAL_CHANGE_EVENT;
         }
 
         return EventMetadata.builder()

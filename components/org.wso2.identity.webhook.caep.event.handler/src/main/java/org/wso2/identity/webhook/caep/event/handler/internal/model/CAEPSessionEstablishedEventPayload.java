@@ -35,14 +35,11 @@ public class CAEPSessionEstablishedEventPayload extends CAEPBaseEventPayload {
         this.eventTimeStamp = builder.eventTimeStamp;
         this.reasonAdmin = builder.reasonAdmin;
         this.reasonUser = builder.reasonUser;
-        this.ips = builder.ips;
         this.fpUa = builder.fpUa;
         this.acr = builder.acr;
         this.amr = builder.amr;
         this.extId = builder.extId;
     }
-
-    private final List<String> ips;
 
     @JsonProperty("fp_ua")
     private final String fpUa;
@@ -71,11 +68,6 @@ public class CAEPSessionEstablishedEventPayload extends CAEPBaseEventPayload {
         return fpUa;
     }
 
-    public List<String> getIps() {
-
-        return ips;
-    }
-
     /*
      * Builder class to create CAEPSessionEstablishedAndPresentedEventPayload instances.
      */
@@ -85,7 +77,6 @@ public class CAEPSessionEstablishedEventPayload extends CAEPBaseEventPayload {
         private String initiatingEntity;
         private Map<String, String> reasonAdmin;
         private Map<String, String> reasonUser;
-        private List<String> ips;
         private String fpUa;
         private List<String> amr;
         private String acr;
@@ -112,12 +103,6 @@ public class CAEPSessionEstablishedEventPayload extends CAEPBaseEventPayload {
         public Builder reasonUser(Map<String, String> reasonUser) {
 
             this.reasonUser = reasonUser;
-            return this;
-        }
-
-        public Builder ips(List<String> ips) {
-
-            this.ips = ips;
             return this;
         }
 

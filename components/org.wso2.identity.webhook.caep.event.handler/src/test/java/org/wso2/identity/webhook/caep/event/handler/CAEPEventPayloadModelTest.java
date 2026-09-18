@@ -89,7 +89,6 @@ public class CAEPEventPayloadModelTest {
                         .amr(amr)
                         .extId(extId)
                         .fpUa(fpUa)
-                        .ips(ips)
                         .acr(acr)
                         .build();
 
@@ -101,7 +100,6 @@ public class CAEPEventPayloadModelTest {
         assertEquals(payload.getAmr(), amr);
         assertEquals(payload.getExtId(), extId);
         assertEquals(payload.getFpUa(), fpUa);
-        assertEquals(payload.getIps(), ips);
         assertEquals(payload.getAcr(), acr);
     }
 
