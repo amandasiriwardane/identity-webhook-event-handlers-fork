@@ -2,9 +2,12 @@ package org.wso2.identity.webhook.caep.event.handler.api.builder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.core.context.IdentityContext;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.event.publisher.api.model.EventPayload;
 import org.wso2.identity.webhook.caep.event.handler.internal.model.CAEPCredentialChangeEventPayload;
+import org.wso2.identity.webhook.caep.event.handler.internal.util.CAEPPayloadUtils;
 import org.wso2.identity.webhook.common.event.handler.api.builder.CredentialEventPayloadBuilder;
 import org.wso2.identity.webhook.common.event.handler.api.constants.Constants;
 import org.wso2.identity.webhook.common.event.handler.api.model.EventData;
@@ -17,25 +20,33 @@ import java.util.Map;
  */
 public class CAEPCredentialEventPayloadBuilder implements CredentialEventPayloadBuilder {
 
-    private static final Log log = LogFactory.getLog(CAEPCredentialEventPayloadBuilder.class);
+    private static final Log LOG = LogFactory.getLog(CAEPCredentialEventPayloadBuilder.class);
+    
+    private static final String UPDATE_CHANGE_TYPE = "update";
 
     @Override
     public EventPayload buildCredentialUpdateEvent(EventData eventData) throws IdentityEventException {
+        
+        final Map<String, Object> params = eventData.getEventParams();
+        long eventTimeStamp = CAEPPayloadUtils.resolveEventTimeStamp(params);
+        
+        Flow flow = IdentityContext.getThreadLocalIdentityContext().getCurrentFlow();
+        String initiatingEntity = CAEPPayloadUtils.resolveInitiatingEntity(flow);
+        String credentialType = CAEPPayloadUtils.resolveCredentialType(flow);
 
-        // TODO: credential_type/change_type are placeholders - real values need the
-        // Flow.CredentialType mapping and create/update/delete/revoke design decisions
         Map<String, String> reasonAdmin = new HashMap<>();
-        reasonAdmin.put("en", "Credential Updated");
         Map<String, String> reasonUser = new HashMap<>();
+        reasonAdmin.put("en", "Credential Updated");
         reasonUser.put("en", "Your credential was updated");
 
         return new CAEPCredentialChangeEventPayload.Builder()
-                .eventTimeStamp(System.currentTimeMillis())
-                .initiatingEntity("user")
+                .eventTimeStamp(eventTimeStamp)
+                .initiatingEntity(initiatingEntity)
                 .reasonAdmin(reasonAdmin)
                 .reasonUser(reasonUser)
-                .credentialType("password")
-                .changeType("update")
+                .credentialType(credentialType)
+                .changeType(UPDATE_CHANGE_TYPE)
+                .friendlyName(null)
                 .build();
     }
 

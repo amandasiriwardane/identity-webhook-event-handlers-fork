@@ -38,7 +38,7 @@ public class CAEPCredentialChangeEventPayload extends CAEPBaseEventPayload {
         this.friendlyName = builder.friendlyName;
         this.x509Issuer = builder.x509Issuer;
         this.x509Serial = builder.x509Serial;
-        this.fidoAaguid = builder.fidoAaguid;
+        this.fido2Aaguid = builder.fido2Aaguid;
     }
 
     @JsonProperty("credential_type")
@@ -56,8 +56,8 @@ public class CAEPCredentialChangeEventPayload extends CAEPBaseEventPayload {
     @JsonProperty("x509_serial")
     private final String x509Serial;
 
-    @JsonProperty("fido_aaguid")
-    private final String fidoAaguid;
+    @JsonProperty("fido2_aaguid")
+    private final String fido2Aaguid;
 
     public String getCredentialType() {
 
@@ -84,9 +84,9 @@ public class CAEPCredentialChangeEventPayload extends CAEPBaseEventPayload {
         return x509Serial;
     }
 
-    public String getFidoAaguid() {
+    public String getFido2Aaguid() {
 
-        return fidoAaguid;
+        return fido2Aaguid;
     }
 
     /*
@@ -103,7 +103,7 @@ public class CAEPCredentialChangeEventPayload extends CAEPBaseEventPayload {
         private String friendlyName;
         private String x509Issuer;
         private String x509Serial;
-        private String fidoAaguid;
+        private String fido2Aaguid;
 
         public Builder eventTimeStamp(long eventTimeStamp) {
 
@@ -159,9 +159,9 @@ public class CAEPCredentialChangeEventPayload extends CAEPBaseEventPayload {
             return this;
         }
 
-        public Builder fidoAaguid(String fidoAaguid) {
+        public Builder fidoA2aguid(String fido2Aaguid) {
 
-            this.fidoAaguid = fidoAaguid;
+            this.fido2Aaguid = fido2Aaguid;
             return this;
         }
 

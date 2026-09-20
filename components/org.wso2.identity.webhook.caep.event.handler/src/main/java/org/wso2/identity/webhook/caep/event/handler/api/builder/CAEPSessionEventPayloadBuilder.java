@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.event.publisher.api.model.EventPayload;
 import org.wso2.identity.webhook.caep.event.handler.internal.model.CAEPSessionEstablishedEventPayload;
 import org.wso2.identity.webhook.caep.event.handler.internal.model.CAEPSessionPresentedEventPayload;
 import org.wso2.identity.webhook.caep.event.handler.internal.model.CAEPSessionRevokedEventPayload;
+import org.wso2.identity.webhook.caep.event.handler.internal.util.CAEPPayloadUtils;
 import org.wso2.identity.webhook.common.event.handler.api.builder.SessionEventPayloadBuilder;
 import org.wso2.identity.webhook.common.event.handler.api.constants.Constants;
 import org.wso2.identity.webhook.common.event.handler.api.model.EventData;
@@ -41,75 +42,50 @@ import java.util.Map;
  */
 public class CAEPSessionEventPayloadBuilder implements SessionEventPayloadBuilder {
 
-    private static final Log log = LogFactory.getLog(CAEPSessionEventPayloadBuilder.class);
+    private static final Log LOG = LogFactory.getLog(CAEPSessionEventPayloadBuilder.class);
 
     static final String CREATED_TIMESTAMP = "CreatedTimestamp";
     static final String UPDATED_TIMESTAMP = "UpdatedTimestamp";
-    static final String EVENT_TIMESTAMP = "eventTimestamp";
-
-    private long extractEventTimeStamp(Map<String, Object> params) {
-
-        return params.containsKey(EVENT_TIMESTAMP) ?
-                Long.parseLong(params.get(EVENT_TIMESTAMP).toString()) :
-                System.currentTimeMillis();
-    }
 
     @Override
     public EventPayload buildSessionRevokedEvent(EventData eventData) throws IdentityEventException {
 
         final Map<String, Object> params = eventData.getEventParams();
-        long eventTimeStamp = extractEventTimeStamp(params);
+        long eventTimeStamp = CAEPPayloadUtils.resolveEventTimeStamp(params);
         String initiatingEntity = null;
         Map<String, String> reasonAdmin = new HashMap<>();
         Map<String, String> reasonUser = new HashMap<>();
 
         Flow flow = IdentityContext.getThreadLocalIdentityContext().getCurrentFlow();
+        initiatingEntity = CAEPPayloadUtils.resolveInitiatingEntity(flow);
         if (flow != null) {
-            // TODO: Switch these with relevant flow names
-            switch (flow.getInitiatingPersona()) {
-                case USER:
-                    initiatingEntity = "user";
-                    break;
-                case ADMIN:
-                    initiatingEntity = "admin";
-                    break;
-                // Due to CAEP definitions, "SYSTEM" initiatingPersona corresponds to "policy" initiatingEntity Value
-                case APPLICATION:
-                    initiatingEntity = "system";
-                    break;
-                case SYSTEM:
-                    initiatingEntity = "policy";
-                    break;
-            }
-            // TODO: Add specific cases (and tailored reason text) for other flows that can trigger session
-            // revocation - e.g. CREDENTIAL_REVOKE, CREDENTIAL_RESET, TOKEN_REVOKE, CONSENT_REVOKE - beyond
-            // the generic fallback below.
             // TODO: Define Flows and change names accordingly
             switch (flow.getName()) {
                 case LOGOUT:
                     reasonAdmin.put("en", "User Logout");
                     reasonUser.put("en", "User Logged Out");
                     break;
-                case USER_ACCOUNT_DELETE:
-                    reasonAdmin.put("en", "User Deleted");
-                    reasonUser.put("en", "User Deleted");
-                    initiatingEntity = "policy";
-                    break;
-                case USER_ACCOUNT_DISABLE:
-                    reasonAdmin.put("en", "Account Disabled");
-                    reasonUser.put("en", "User Account was Disabled");
-                    initiatingEntity = "policy";
-                    break;
-                case USER_ACCOUNT_LOCK:
-                    reasonAdmin.put("en", "Account Locked");
-                    reasonUser.put("en", "User Account was Locked");
-                    initiatingEntity = "policy";
+                case CREDENTIAL_RESET:
+                case CREDENTIAL_UPDATE:
+                    reasonAdmin.put("en", "Credential Updated");
+                    reasonUser.put("en", "Credential Updated");
                     break;
                 case PROFILE_UPDATE:
                     // Account lock/disable flows are commonly preceded by a PROFILE_UPDATE flow in practice.
                     reasonAdmin.put("en", "User Profile Locked or Disabled");
                     reasonUser.put("en", "User Profile Locked or Disabled");
-                    initiatingEntity = "policy";
+                    break;
+                case USER_ACCOUNT_DELETE:
+                    reasonAdmin.put("en", "User Deleted");
+                    reasonUser.put("en", "User Deleted");
+                    break;
+                case USER_ACCOUNT_DISABLE:
+                    reasonAdmin.put("en", "Account Disabled");
+                    reasonUser.put("en", "User Account was Disabled");
+                    break;
+                case USER_ACCOUNT_LOCK:
+                    reasonAdmin.put("en", "Account Locked");
+                    reasonUser.put("en", "User Account was Locked");
                     break;
                 case SESSION_REVOKE:
                     if (flow.getInitiatingPersona() == Flow.InitiatingPersona.ADMIN) {
@@ -132,8 +108,7 @@ public class CAEPSessionEventPayloadBuilder implements SessionEventPayloadBuilde
                     break;
             }
         } else {
-            // No Flow context available (e.g. a background/system-triggered termination with no
-            // attached flow). initiating_entity is genuinely unknown here and stays absent (it's
+            // No Flow context available. initiating_entity is genuinely unknown here and stays absent (it's
             // optional per spec); reason_admin/reason_user still need the same non-empty fallback.
             reasonAdmin.put("en", "Session revoked");
             reasonUser.put("en", "Session revoked");
@@ -156,39 +131,41 @@ public class CAEPSessionEventPayloadBuilder implements SessionEventPayloadBuilde
     @Override
     public EventPayload buildSessionEstablishedEvent(EventData eventData) throws IdentityEventException {
 
-        SessionContext sessionContext = eventData.getSessionContext();
         final Map<String, Object> params = eventData.getEventParams();
+        SessionContext sessionContext = eventData.getSessionContext();
         Long eventTimeStamp = null;
         if (sessionContext != null && sessionContext.getProperty(CREATED_TIMESTAMP) != null) {
             eventTimeStamp = Long.parseLong(sessionContext.getProperty(CREATED_TIMESTAMP).toString());
         }
-
         if (eventTimeStamp == null) {
-            eventTimeStamp = extractEventTimeStamp(params);
+            eventTimeStamp = CAEPPayloadUtils.resolveEventTimeStamp(params);
+        }
+        String initiatingEntity = null;
+        Map<String, String> reasonAdmin = new HashMap<>();
+        Map<String, String> reasonUser = new HashMap<>();
+        
+        Flow flow = IdentityContext.getThreadLocalIdentityContext().getCurrentFlow();
+        initiatingEntity = CAEPPayloadUtils.resolveInitiatingEntity(flow);
+        if (flow != null) {
+            switch (flow.getName()) {
+                case LOGIN:
+                    reasonAdmin.put("en", "Initial Login");
+                    reasonUser.put("en", "User Logged In");
+                    break;
+                default:
+                    reasonAdmin.put("en", "Session Established");
+                    reasonUser.put("en", "User Logged In");
+                    break;
+            }
+        } else {
+            reasonAdmin.put("en", "Session Established");
+            reasonUser.put("en", "User Logged In");
         }
 
-        String initiatingEntity = "user";
-
-        Map<String, String> reasonAdmin = new HashMap<>();
-        reasonAdmin.put("en", "Initial Login");
-        Map<String, String> reasonUser = new HashMap<>();
-        reasonUser.put("en", "User Logged In");
-
-        // TODO: Add AMR list Support
-        List<String> amr = null;
-
-        // TODO: Add ips
-        List<String> ips = null;
-
-        // TODO: Add FpUa
-        String fpUa = null;
-
-        // TODO: Add ExtId
-        String extId = null;
-
-        // TODO: Add Acr
-        String acr = eventData.getAuthenticationContext() != null ?
-                eventData.getAuthenticationContext().getSelectedAcr() : null;
+        List<String> amr = CAEPPayloadUtils.resolveAmr(eventData);
+        String fpUa = CAEPPayloadUtils.resolveFpUa(eventData);
+        String extId = CAEPPayloadUtils.resolveExtId(eventData);
+        String acr = CAEPPayloadUtils.resolveAcr(eventData);
 
         return new CAEPSessionEstablishedEventPayload.Builder()
                 .eventTimeStamp(eventTimeStamp)
@@ -196,7 +173,6 @@ public class CAEPSessionEventPayloadBuilder implements SessionEventPayloadBuilde
                 .reasonUser(reasonUser)
                 .reasonAdmin(reasonAdmin)
                 .amr(amr)
-                .ips(ips)
                 .fpUa(fpUa)
                 .extId(extId)
                 .acr(acr)
@@ -220,28 +196,26 @@ public class CAEPSessionEventPayloadBuilder implements SessionEventPayloadBuilde
         }
 
         if (eventTimeStamp == null) {
-            eventTimeStamp = extractEventTimeStamp(params);
+            eventTimeStamp = CAEPPayloadUtils.resolveEventTimeStamp(params);
         }
-        // TODO: Set these values according to the flow
+
         String initiatingEntity = null;
-        Map<String, String> reasonAdmin = null;
-        Map<String, String> reasonUser = null;
+        Map<String, String> reasonAdmin = new HashMap<>();
+        Map<String, String> reasonUser = new HashMap<>();
 
-        // TODO: Add ips
-        List<String> ips = null;
+        Flow flow = IdentityContext.getThreadLocalIdentityContext().getCurrentFlow();
+        initiatingEntity = CAEPPayloadUtils.resolveInitiatingEntity(flow);
+        reasonAdmin.put("en", "Session Presented");
+        reasonUser.put("en", "Session Presented");
 
-        // TODO: Add FpUa
-        String fpUa = null;
-
-        // TODO: Add ExtId
-        String extId = null;
+        String fpUa = CAEPPayloadUtils.resolveFpUa(eventData);
+        String extId = CAEPPayloadUtils.resolveExtId(eventData);
 
         return new CAEPSessionPresentedEventPayload.Builder()
                 .eventTimeStamp(eventTimeStamp)
                 .initiatingEntity(initiatingEntity)
                 .reasonUser(reasonUser)
                 .reasonAdmin(reasonAdmin)
-                .ips(ips)
                 .fpUa(fpUa)
                 .extId(extId)
                 .build();

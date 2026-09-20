@@ -135,7 +135,7 @@ public class CAEPEventPayloadModelTest {
         String friendlyName = "Password";
         String x509Issuer = "x509Issuer";
         String x509Serial = "x509Serial";
-        String fidoAaguid = "fidoAaguid";
+        String fido2Aaguid = "fido2Aaguid";
 
         CAEPCredentialChangeEventPayload payload = new CAEPCredentialChangeEventPayload.Builder()
                 .eventTimeStamp(eventTimeStamp)
@@ -147,7 +147,7 @@ public class CAEPEventPayloadModelTest {
                 .friendlyName(friendlyName)
                 .x509Serial(x509Serial)
                 .x509Issuer(x509Issuer)
-                .fidoAaguid(fidoAaguid)
+                .fidoA2aguid(fido2Aaguid)
                 .build();
 
         assertNotNull(payload);
@@ -160,7 +160,7 @@ public class CAEPEventPayloadModelTest {
         assertEquals(payload.getFriendlyName(), friendlyName);
         assertEquals(payload.getX509Issuer(), x509Issuer);
         assertEquals(payload.getX509Serial(), x509Serial);
-        assertEquals(payload.getFidoAaguid(), fidoAaguid);
+        assertEquals(payload.getFido2Aaguid(), fido2Aaguid);
     }
 
     @Test
