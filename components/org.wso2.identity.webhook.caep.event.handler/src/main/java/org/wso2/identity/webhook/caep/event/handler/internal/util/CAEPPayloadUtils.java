@@ -23,17 +23,12 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthHistory;
 import org.wso2.carbon.identity.core.context.model.Flow; 
-import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.identity.webhook.caep.event.handler.internal.constant.CAEPConstants;
-import org.wso2.identity.webhook.common.event.handler.api.constants.Constants;
 import org.wso2.identity.webhook.common.event.handler.api.model.EventData;
-import org.wso2.identity.webhook.common.event.handler.api.model.EventMetadata;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List; 
-import java.util.Objects;
 import java.util.Map;
 
 public class CAEPPayloadUtils {
@@ -186,39 +181,5 @@ public class CAEPPayloadUtils {
             return PASSKEY_CREDENTIAL_TYPE;
         }
         return PASSWORD_CREDENTIAL_TYPE;
-    }
-    /**
-     * Resolve the event metadata based on the event name.
-     *
-     * @param eventName Event name.
-     * @return Event metadata containing event and channel information.
-     */
-    public static EventMetadata resolveEventHandlerKey(String eventName) {
-
-        String event = null;
-        String channel = null;
-        if (Objects.requireNonNull(eventName).equals(
-                IdentityEventConstants.Event.SESSION_TERMINATE_V2)) {
-            channel = CAEPConstants.Channel.SESSION_CHANNEL;
-            event = CAEPConstants.Event.SESSION_REVOKED_EVENT;
-        } else if (IdentityEventConstants.Event.SESSION_CREATE.equals(eventName)) {
-            channel = CAEPConstants.Channel.SESSION_CHANNEL;
-            event = CAEPConstants.Event.SESSION_CREATED_EVENT;
-        } else if (IdentityEventConstants.Event.SESSION_EXTENSION.equals(eventName) ||
-                IdentityEventConstants.Event.SESSION_UPDATE.equals(eventName)) {
-            channel = CAEPConstants.Channel.SESSION_CHANNEL;
-            event = CAEPConstants.Event.SESSION_PRESENTED_EVENT;
-        } else if (IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD.equals(eventName) ||
-                IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_SCIM.equals(eventName) ||
-                IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ME_API.equals(eventName)) {
-            channel = CAEPConstants.Channel.CREDENTIAL_CHANGE_CHANNEL;
-            event = CAEPConstants.Event.CREDENTIAL_CHANGE_EVENT;
-        }
-
-        return EventMetadata.builder()
-                .event(String.valueOf(event))
-                .channel(String.valueOf(channel))
-                .eventProfile(Constants.EventSchema.CAEP.name())
-                .build();
     }
 }
