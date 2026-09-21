@@ -24,7 +24,7 @@ import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthHistory;
 import org.wso2.carbon.identity.core.context.model.Flow; 
 import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.identity.webhook.caep.event.handler.internal.constants.CAEPConstants;
+import org.wso2.identity.webhook.caep.event.handler.internal.constant.CAEPConstants;
 import org.wso2.identity.webhook.common.event.handler.api.constants.Constants;
 import org.wso2.identity.webhook.common.event.handler.api.model.EventData;
 import org.wso2.identity.webhook.common.event.handler.api.model.EventMetadata;

@@ -1,4 +1,4 @@
-package org.wso2.identity.webhook.caep.event.handler.internal.constants;
+package org.wso2.identity.webhook.caep.event.handler.internal.constant;
 
 /**
  * Constants class for CAEP-specific channel and event-type URIs.

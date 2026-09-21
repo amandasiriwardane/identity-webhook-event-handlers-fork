@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.identity.webhook.caep.event.handler.api;
+package org.wso2.identity.webhook.caep.event.handler.internal.service.impl;
 
 import org.wso2.identity.webhook.common.event.handler.api.service.EventProfileManager;
 import org.wso2.identity.webhook.common.event.handler.api.model.EventMetadata;
