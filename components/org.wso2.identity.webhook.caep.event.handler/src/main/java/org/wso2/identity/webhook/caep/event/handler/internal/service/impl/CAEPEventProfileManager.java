@@ -35,14 +35,14 @@ public class CAEPEventProfileManager implements EventProfileManager {
         String channelUri = null;
         if (Objects.requireNonNull(event).equals(
                 IdentityEventConstants.Event.SESSION_TERMINATE_V2)) {
-            channelUri = CAEPConstants.Channel.SESSION_CHANNEL;
+            channelUri = CAEPConstants.Channel.SESSION_REVOKED_CHANNEL;
             eventUri = CAEPConstants.Event.SESSION_REVOKED_EVENT;
         } else if (IdentityEventConstants.Event.SESSION_CREATE.equals(event)) {
-            channelUri = CAEPConstants.Channel.SESSION_CHANNEL;
+            channelUri = CAEPConstants.Channel.SESSION_ESTABLISHED_CHANNEL;
             eventUri = CAEPConstants.Event.SESSION_CREATED_EVENT;
         } else if (IdentityEventConstants.Event.SESSION_EXTENSION.equals(event) ||
                 IdentityEventConstants.Event.SESSION_UPDATE.equals(event)) {
-            channelUri = CAEPConstants.Channel.SESSION_CHANNEL;
+            channelUri = CAEPConstants.Channel.SESSION_PRESENTED_CHANNEL;
             eventUri = CAEPConstants.Event.SESSION_PRESENTED_EVENT;
         } else if (IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD.equals(event) ||
                 IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_SCIM.equals(event) ||

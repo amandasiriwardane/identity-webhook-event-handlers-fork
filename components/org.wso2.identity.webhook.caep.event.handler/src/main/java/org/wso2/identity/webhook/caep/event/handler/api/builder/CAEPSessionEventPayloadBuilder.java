@@ -100,8 +100,7 @@ public class CAEPSessionEventPayloadBuilder implements SessionEventPayloadBuilde
                     }
                     break;
                 default:
-                    // Fallback so reason_admin/reason_user are never empty - the CAEP Interoperability
-                    // Profile requires reason_admin to be populated with a non-empty object whenever
+                    //CAEP Interoperability Profile requires reason_admin to be populated with a non-empty object whenever
                     // session-revoked is emitted.
                     reasonAdmin.put("en", "Session revoked due to " + flow.getName());
                     reasonUser.put("en", "Session revoked");
