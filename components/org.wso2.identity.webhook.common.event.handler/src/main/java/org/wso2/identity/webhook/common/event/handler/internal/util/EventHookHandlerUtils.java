@@ -85,7 +85,7 @@ public class EventHookHandlerUtils {
         AuthenticationContext authenticationContext = extractAuthenticationContext(properties);
         SessionContext sessionContext = extractSessionContext(properties);
         AuthenticatorStatus status = extractAuthenticatorStatus(properties);
-        HttpServletRequest request = extractRequest(params);
+        HttpServletRequest request = extractRequest(properties);
 
         String tenantDomain = resolveTenantDomain(authenticationContext, params, properties);
 
