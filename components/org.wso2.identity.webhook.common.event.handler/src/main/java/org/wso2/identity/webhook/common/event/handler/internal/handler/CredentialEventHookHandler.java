@@ -99,7 +99,12 @@ public class CredentialEventHookHandler extends AbstractEventHandler {
             }
 
             for (EventProfile eventProfile : eventProfileList) {
-                handleEventForProfile(event, eventProfile);
+                try {
+                    handleEventForProfile(event, eventProfile);
+                } catch (Exception e) {
+                    log.warn("Error while handling credential change event for profile: " +
+                            eventProfile.getProfile(), e);
+                }
             }
         } catch (Exception e) {
             log.warn("Error while retrieving credential change event publisher configuration for tenant.", e);

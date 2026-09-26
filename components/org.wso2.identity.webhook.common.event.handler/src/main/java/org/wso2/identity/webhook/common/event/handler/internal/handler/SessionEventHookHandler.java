@@ -75,7 +75,12 @@ public class SessionEventHookHandler extends AbstractEventHandler {
                 return;
             }
             for (EventProfile eventProfile : eventProfileList) {
-                handleEventPerEventProfile(event, eventData, eventProfile);
+                try {
+                    handleEventPerEventProfile(event, eventData, eventProfile);
+                } catch (Exception e) {
+                    log.warn("Error while handling session event for profile: " +
+                            eventProfile.getProfile(), e);
+                }
             }
         } catch (Exception e) {
             log.warn("Error while executing session event webhook handler.", e);

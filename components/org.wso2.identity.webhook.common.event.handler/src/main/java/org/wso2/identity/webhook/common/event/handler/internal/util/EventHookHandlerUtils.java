@@ -46,6 +46,11 @@ import org.wso2.carbon.identity.event.publisher.api.model.SecurityEventTokenPayl
 import org.wso2.carbon.identity.event.publisher.api.model.common.ComplexSubject;
 import org.wso2.carbon.identity.event.publisher.api.model.common.SimpleSubject;
 import org.wso2.carbon.identity.event.publisher.api.model.common.Subject;
+import org.wso2.carbon.user.api.UserRealm;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.identity.webhook.common.event.handler.api.model.EventData;
 import org.wso2.identity.webhook.common.event.handler.api.model.EventMetadata;
 import org.wso2.identity.webhook.common.event.handler.api.service.EventProfileManager;
@@ -90,7 +95,7 @@ public class EventHookHandlerUtils {
         String tenantDomain = resolveTenantDomain(authenticationContext, params, properties);
 
         AuthenticatedUser authenticatedUser = extractAuthenticatedUser(params, authenticationContext, sessionContext);
-        String userId = resolveUserId(authenticatedUser, properties);
+        String userId = resolveUserId(authenticatedUser, properties, tenantDomain);
 
         return EventData.builder()
                 .eventName(event.getEventName())
@@ -272,7 +277,8 @@ public class EventHookHandlerUtils {
 
         String userId = eventData.getUserId();
         if (userId == null) {
-            throw new IdentityEventException("Error occurred while retrieving user id for the subject.");
+            log.debug("Unable to resolve user id for the subject; sub_id will be omitted.");
+            return null;
         }
         SimpleSubject user = SimpleSubject.createOpaqueSubject(userId);
 
@@ -407,7 +413,52 @@ public class EventHookHandlerUtils {
         return null;
     }
 
-    private static String resolveUserId(AuthenticatedUser authenticatedUser, Map<String, Object> properties) {
+    /**
+     * Resolve the user id via the user store, as a fallback when neither the authenticated
+     * user nor a direct USER_ID property is available (e.g. admin-triggered credential changes,
+     * where there's no live authenticated session for the target user).
+     *
+     * @param userName        Username from the event properties.
+     * @param userStoreDomain User store domain from the event properties.
+     * @param tenantDomain    Tenant domain.
+     * @return Resolved user id, or null if it could not be resolved.
+     */
+    private static String resolveUserIdFromUserStore(String userName, String userStoreDomain, String tenantDomain) {
+
+        if (userName == null || userStoreDomain == null) {
+            return null;
+        }
+
+        RealmService realmService = EventHookHandlerDataHolder.getInstance().getRealmService();
+        if (realmService == null) {
+            log.debug("RealmService is not available. Skipping user store based user id resolution.");
+            return null;
+        }
+
+        try {
+            int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+            UserRealm userRealm = realmService.getTenantUserRealm(tenantId);
+            if (userRealm == null) {
+                log.debug("UserRealm is null for tenant: " + tenantDomain);
+                return null;
+            }
+
+            UserStoreManager userStoreManager = userRealm.getUserStoreManager();
+            if (userStoreManager == null) {
+                log.debug("UserStoreManager is null for tenant: " + tenantDomain);
+                return null;
+            }
+
+            String domainQualifiedUserName = userStoreDomain + "/" + userName;
+            return userStoreManager.getUserClaimValue(domainQualifiedUserName, FrameworkConstants.USER_ID_CLAIM,
+                    UserCoreConstants.DEFAULT_PROFILE);
+        } catch (UserStoreException e) {
+            log.debug("Error while resolving user id from user store for user: " + userName, e);
+            return null;
+        }
+    }
+
+    private static String resolveUserId(AuthenticatedUser authenticatedUser, Map<String, Object> properties, String tenantDomain) {
 
         if (authenticatedUser != null) {
             try {
@@ -419,6 +470,12 @@ public class EventHookHandlerUtils {
 
         if (properties != null && properties.containsKey(IdentityEventConstants.EventProperty.USER_ID)) {
             return (String) properties.get(IdentityEventConstants.EventProperty.USER_ID);
+        }
+        
+        if (properties != null) {
+             String userName = (String) properties.get(IdentityEventConstants.EventProperty.USER_NAME);
+             String userStoreDomain = (String) properties.get(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN);
+             return resolveUserIdFromUserStore(userName, userStoreDomain, tenantDomain);
         }
         return null;
     }
